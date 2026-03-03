@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Videollamada Teams – CIPAS</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:#111;
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.screen {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.6s ease;
+}
+.screen.active { opacity:1; pointer-events:all; }
+
+/* ── S1 NATALIA ── */
+#sNatalia { background:linear-gradient(145deg,#0d2137,#1a3a5c 55%,#0b1a2e); }
+.winbar {
+  background:rgba(0,0,0,.5); padding:9px 18px;
+  display:flex; align-items:center; gap:10px;
+  border-bottom:1px solid rgba(255,255,255,.08); flex-shrink:0;
+}
+.datechip {
+  background:#6264a7; color:#fff; font-size:12px; font-weight:700;
+  padding:3px 13px; border-radius:20px;
+  animation:pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100%{ box-shadow:0 0 0 0 rgba(98,100,167,.7); }
+  50%    { box-shadow:0 0 0 9px rgba(98,100,167,0); }
+}
+.winclk { color:#fff; font-size:13px; font-weight:600; margin-left:auto; }
+.natBody {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:20px; padding:30px;
+}
+.bigAv {
+  width:130px; height:130px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:52px;
+  border:4px solid rgba(255,255,255,.25);
+  animation:floatY 3s ease-in-out infinite;
+}
+.bigAv.nat { background:linear-gradient(135deg,#7b68ee,#9b59b6); box-shadow:0 20px 50px rgba(123,104,238,.4); }
+@keyframes floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.pname { color:#fff; font-size:26px; font-weight:700; }
+.psub  { color:rgba(255,255,255,.5); font-size:14px; }
+.thinkBox {
+  background:rgba(255,255,255,.09); backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.16); border-radius:18px;
+  padding:20px 28px; max-width:560px; color:#fff;
+  font-size:16px; line-height:1.7; text-align:center;
+  opacity:0; transform:translateY(18px); transition:all .55s ease;
+}
+.thinkBox.show { opacity:1; transform:translateY(0); }
+.thinkBox .who { font-size:11px; font-weight:700; text-transform:uppercase;
+  letter-spacing:1px; color:#a89cff; margin-bottom:8px; }
+.actLine { color:rgba(255,255,255,.4); font-style:italic; font-size:14px;
+  opacity:0; transition:opacity .5s; text-align:center; }
+.actLine.show { opacity:1; }
+
+/* ── S2 LLAMADA ENTRANTE ── */
+#sIncoming {
+  background:#0d0d1a;
+  align-items:center; justify-content:center; gap:14px;
+}
+.incTag { color:rgba(255,255,255,.4); font-size:13px; }
+.incCard {
+  background:linear-gradient(180deg,#252540,#14142a);
+  border:1px solid rgba(255,255,255,.1); border-radius:24px;
+  padding:44px 56px; text-align:center;
+  box-shadow:0 40px 80px rgba(0,0,0,.6);
+  display:flex; flex-direction:column; align-items:center; gap:18px;
+}
+.ringWrap { position:relative; width:120px; height:120px;
+  display:flex; align-items:center; justify-content:center; }
+.ring {
+  position:absolute; inset:0; border-radius:50%;
+  border:3px solid rgba(98,100,167,.5);
+  animation:ringOut 1.8s ease-out infinite;
+}
+.ring:nth-child(2){ animation-delay:.6s; }
+.ring:nth-child(3){ animation-delay:1.2s; }
+@keyframes ringOut {
+  0%  { transform:scale(1);   opacity:1; }
+  100%{ transform:scale(2.7); opacity:0; }
+}
+.ringAv {
+  width:90px; height:90px; border-radius:50%;
+  background:linear-gradient(135deg,#7b68ee,#9b59b6);
+  display:flex; align-items:center; justify-content:center;
+  font-size:38px; position:relative; z-index:1;
+}
+.sbars { display:flex; align-items:center; gap:4px; height:28px; }
+.sbars span {
+  display:inline-block; width:4px; background:#7b68ee; border-radius:2px;
+  animation:sbar 1s ease-in-out infinite;
+}
+.sbars span:nth-child(1){ height:8px;  animation-delay:0s; }
+.sbars span:nth-child(2){ height:18px; animation-delay:.12s; }
+.sbars span:nth-child(3){ height:28px; animation-delay:.24s; }
+.sbars span:nth-child(4){ height:18px; animation-delay:.36s; }
+.sbars span:nth-child(5){ height:8px;  animation-delay:.48s; }
+@keyframes sbar { 0%,100%{transform:scaleY(.5);opacity:.6} 50%{transform:scaleY(1);opacity:1} }
+.incName  { color:#fff; font-size:24px; font-weight:700; }
+.incLabel { color:rgba(255,255,255,.45); font-size:14px; }
+.callBtns { display:flex; gap:60px; }
+.btnAns {
+  width:68px; height:68px; border-radius:50%; background:#36b37e;
+  border:none; font-size:26px; cursor:pointer;
+  animation:ansGlow 1s ease-in-out infinite alternate;
+}
+@keyframes ansGlow {
+  from{ box-shadow:0 0 18px rgba(54,179,126,.4); }
+  to  { box-shadow:0 0 40px rgba(54,179,126,.9); }
+}
+.btnDec { width:68px; height:68px; border-radius:50%; background:#e74c3c;
+  border:none; font-size:26px; cursor:pointer; }
+.btnLbl { color:rgba(255,255,255,.4); font-size:11px; margin-top:6px; text-align:center; }
+
+/* ── S3 VIDEOLLAMADA ── */
+#sCall { background:#111; }
+.teamsBar {
+  background:#201f1f; padding:9px 18px;
+  display:flex; align-items:center; gap:12px;
+  border-bottom:1px solid rgba(255,255,255,.07); flex-shrink:0;
+}
+.tLogo {
+  width:26px; height:26px; border-radius:6px; background:#6264a7;
+  color:#fff; font-size:13px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+}
+.tTitle { color:rgba(255,255,255,.75); font-size:13px; font-weight:600; }
+.cipasBadge { background:#6264a7; color:#fff; font-size:11px; font-weight:700;
+  padding:3px 11px; border-radius:12px; margin-left:auto; }
+.cTimer { color:rgba(255,255,255,.45); font-size:12px; font-family:monospace; }
+.callGrid {
+  flex:1; display:grid; grid-template-columns:1fr 1fr; gap:4px;
+  padding:4px; background:#000; position:relative;
+}
+.ptile {
+  background:linear-gradient(135deg,#1b1b2e,#252540);
+  border-radius:10px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:14px;
+  position:relative; overflow:hidden;
+  transition:box-shadow .4s;
+}
+.ptile::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(circle at 50% 30%,rgba(98,100,167,.15),transparent 70%);
+}
+.ptile.speaking { box-shadow:inset 0 0 0 3px #6264a7; }
+.pAv {
+  width:86px; height:86px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:36px; position:relative; z-index:1;
+}
+.pAv.nat { background:linear-gradient(135deg,#7b68ee,#9b59b6); box-shadow:0 10px 28px rgba(123,104,238,.4); }
+.pAv.lui { background:linear-gradient(135deg,#3498db,#2980b9); box-shadow:0 10px 28px rgba(52,152,219,.4); }
+.pN  { color:#fff; font-size:15px; font-weight:600; z-index:1; }
+.pSt { color:rgba(255,255,255,.4); font-size:11px; z-index:1; }
+.pLbl {
+  position:absolute; bottom:10px; left:10px;
+  background:rgba(0,0,0,.65); color:#fff; font-size:11px;
+  padding:3px 9px; border-radius:6px; z-index:2;
+}
+
+/* ── SUBTÍTULOS ── permanecen hasta el siguiente clic */
+.subsLayer {
+  position:absolute; bottom:0; left:0; right:0; z-index:20;
+  padding:16px 20px 18px;
+  background:linear-gradient(to top, rgba(0,0,0,.92) 80%, transparent);
+  min-height:100px;
+  display:flex; flex-direction:column; gap:6px;
+}
+.subBox {
+  border-radius:12px; padding:16px 20px;
+  color:#fff; font-size:17px; line-height:1.65;
+  border-left:5px solid #6264a7;
+  background:rgba(10,10,30,.85);
+  opacity:0; transform:translateY(10px);
+  transition:opacity .4s ease, transform .4s ease;
+}
+.subBox.vis   { opacity:1; transform:translateY(0); }
+.subBox.lui   { border-left-color:#3498db; }
+.subBox .swho {
+  font-size:12px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.8px; margin-bottom:6px; color:#b0a5ff;
+}
+.subBox.lui .swho { color:#5dbbf5; }
+.hintLine {
+  color:rgba(255,255,255,.45); font-size:12px; font-style:italic;
+  text-align:center; margin-top:4px;
+  opacity:0; transition:opacity .4s;
+}
+.hintLine.show { opacity:1; }
+
+.callCtrls {
+  background:#201f1f; padding:14px 30px;
+  display:flex; align-items:center; justify-content:center; gap:18px;
+  border-top:1px solid rgba(255,255,255,.07); flex-shrink:0;
+}
+.cbtn { width:46px; height:46px; border-radius:50%; border:none; cursor:pointer;
+  background:rgba(255,255,255,.1); color:#fff; font-size:18px; }
+.cbtn.end { background:#e74c3c; width:54px; height:54px; font-size:20px; }
+
+/* ── S4 FIN ── */
+#sEnd {
+  background:linear-gradient(135deg,#0f3460,#6264a7);
+  align-items:center; justify-content:center; gap:22px; text-align:center;
+}
+.endIco { font-size:78px; animation:pop .5s ease; }
+@keyframes pop { 0%{transform:scale(0)} 70%{transform:scale(1.15)} 100%{transform:scale(1)} }
+.endH { color:#fff; font-size:30px; font-weight:700; }
+.endP { color:rgba(255,255,255,.72); font-size:16px; line-height:1.65; }
+.cardsRow { display:flex; gap:18px; margin-top:8px; }
+.endCard {
+  background:rgba(255,255,255,.14); border-radius:18px;
+  padding:14px 28px; color:#fff; font-size:14px;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.ecIco { font-size:28px; }
+.ecN   { font-weight:700; }
+.ecOk  { opacity:.6; font-size:12px; }
+.btnRestart { background:#fff; color:#6264a7; border:none;
+  padding:13px 38px; border-radius:28px;
+  font-size:15px; font-weight:700; cursor:pointer; margin-top:8px;
+  transition:transform .2s; }
+.btnRestart:hover{ transform:scale(1.06); }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; top:16px; right:16px; z-index:999;
+  background:#2a2a44; border:1px solid rgba(255,255,255,.14);
+  border-radius:12px; padding:12px 18px;
+  display:flex; align-items:center; gap:11px; color:#fff; font-size:13px;
+  opacity:0; transform:translateX(115px); transition:all .4s ease;
+  min-width:260px;
+}
+.toast.show { opacity:1; transform:translateX(0); }
+.tIco   { font-size:22px; }
+.tTitle { font-weight:700; font-size:12px; }
+.tMsg   { color:rgba(255,255,255,.55); font-size:11px; }
+
+/* ── DOTS ── */
+.dots {
+  position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
+  display:flex; gap:8px; z-index:500;
+}
+.dot { width:8px; height:8px; border-radius:50%;
+  background:rgba(255,255,255,.25); transition:all .3s; }
+.dot.on { background:#6264a7; transform:scale(1.4); }
+
+/* ── BOTÓN ── */
+#advBtn {
+  position:fixed; bottom:44px; right:24px; z-index:500;
+  background:#6264a7; color:#fff; border:none;
+  padding:12px 24px; border-radius:24px;
+  font-size:15px; font-weight:700; cursor:pointer;
+  box-shadow:0 8px 24px rgba(98,100,167,.55);
+  transition:transform .2s, opacity .3s;
+}
+#advBtn:hover{ transform:scale(1.06); }
+#advBtn:disabled{ opacity:.3; cursor:not-allowed; transform:none; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">
+  <div class="tIco">🔔</div>
+  <div>
+    <div class="tTitle">Microsoft Teams</div>
+    <div class="tMsg" id="tMsg"></div>
+  </div>
+</div>
+<div class="dots">
+  <div class="dot on" id="d0"></div>
+  <div class="dot"    id="d1"></div>
+  <div class="dot"    id="d2"></div>
+  <div class="dot"    id="d3"></div>
+</div>
+<button id="advBtn" onclick="next()">Continuar ▶</button>
+
+<!-- S1 -->
+<div id="sNatalia" class="screen active">
+  <div class="winbar">
+    <span style="font-size:18px">🪟</span>
+    <span style="color:#fff;font-size:13px;font-weight:600">Escritorio – Natalia</span>
+    <div class="datechip">📅 4 de marzo</div>
+    <span class="winclk" id="winclk"></span>
+  </div>
+  <div class="natBody">
+    <div class="bigAv nat">👩‍💻</div>
+    <div class="pname">Natalia</div>
+    <div class="psub">Estudiante · Pensamiento Lógico y Matemático</div>
+    <div class="thinkBox" id="bNat">
+      <div class="who">💭 Natalia piensa…</div>
+      ¡Es mañana! 4 de marzo… Empiezan mis <strong>CIPAS de Pensamiento Lógico y Matemático</strong> con la directora Carolina Castaño.<br><br>
+      Voy a llamar a Luis, ¿será que se acuerda?
+    </div>
+    <div class="actLine" id="actLine">
+      📞 <em>Natalia abre Microsoft Teams y hace una videollamada a Luis…</em>
+    </div>
+  </div>
+</div>
+
+<!-- S2 -->
+<div id="sIncoming" class="screen">
+  <div class="incTag">📱 Dispositivo de <strong style="color:#fff">Luis</strong></div>
+  <div class="incCard">
+    <div class="ringWrap">
+      <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+      <div class="ringAv">👩‍💻</div>
+    </div>
+    <div class="sbars"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="incName">Natalia</div>
+    <div class="incLabel">Videollamada entrante · Microsoft Teams</div>
+    <div class="callBtns">
+      <div><button class="btnAns" onclick="answerCall()">📹</button><div class="btnLbl">Contestar</div></div>
+      <div><button class="btnDec">📵</button><div class="btnLbl">Rechazar</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- S3 -->
+<div id="sCall" class="screen">
+  <div class="teamsBar">
+    <div class="tLogo">T</div>
+    <div class="tTitle">Microsoft Teams · Videollamada</div>
+    <div class="cipasBadge">CIPAS en curso</div>
+    <div class="cTimer" id="cTimer">00:00</div>
+  </div>
+  <div class="callGrid">
+    <div class="ptile" id="tNat">
+      <div class="pAv nat">👩‍💻</div>
+      <div class="pN">Natalia</div>
+      <div class="pSt">Conectada desde casa</div>
+      <div class="pLbl">Natalia 🎤</div>
+    </div>
+    <div class="ptile" id="tLui">
+      <div class="pAv lui">👨‍💻</div>
+      <div class="pN">Luis</div>
+      <div class="pSt">Conectado desde casa</div>
+      <div class="pLbl">Luis 🎤</div>
+    </div>
+    <!-- subtítulos -->
+    <div class="subsLayer" id="subsLayer" style="display:none">
+      <div class="subBox" id="subBox"></div>
+      <div class="hintLine" id="hintLine">▶ Presiona "Continuar" para avanzar</div>
+    </div>
+  </div>
+  <div class="callCtrls">
+    <button class="cbtn">🎤</button>
+    <button class="cbtn">📹</button>
+    <button class="cbtn">💬</button>
+    <button class="cbtn end">📵</button>
+    <button class="cbtn">⋯</button>
+  </div>
+</div>
+
+<!-- S4 -->
+<div id="sEnd" class="screen">
+  <div class="endIco">🎓</div>
+  <div class="endH">¡Nos vemos en la sesión!</div>
+  <div class="endP">
+    Natalia y Luis se conectan al CIPAS de<br>
+    <strong>Pensamiento Lógico y Matemático</strong><br>
+    📅 4 de marzo · Encuentro sincrónico
+  </div>
+  <div class="cardsRow">
+    <div class="endCard"><div class="ecIco">👩‍💻</div><div class="ecN">Natalia</div><div class="ecOk">Lista ✓</div></div>
+    <div class="endCard"><div class="ecIco">👨‍💻</div><div class="ecN">Luis</div><div class="ecOk">Listo ✓</div></div>
+  </div>
+  <button class="btnRestart" onclick="restart()">↺ Ver de nuevo</button>
+</div>
+
+<script>
+/* ════════════════════════════════════
+   AUDIO – Web Audio API
+   Nota: el contexto se crea en el
+   primer clic del usuario (obligatorio
+   en navegadores modernos).
+════════════════════════════════════ */
+let AC = null;
+function getAC() {
+  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+  // Si estaba suspendido, lo reanudamos
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+
+function beep(freq, dur, vol, type, delay) {
+  try {
+    const c = getAC();
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    const t = c.currentTime + (delay || 0);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol || 0.2, t + 0.03);
+    g.gain.linearRampToValueAtTime(0, t + dur - 0.03);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + dur);
+  } catch(e) {}
+}
+
+// Tono de llamada: dos tonos cortos (880+1100 Hz)
+function playRing() {
+  beep(880,  0.18, 0.22, 'sine', 0.0);
+  beep(1100, 0.18, 0.22, 'sine', 0.22);
+}
+
+// Jingle de conexión ascendente
+function playConnect() {
+  [523, 659, 784, 1047].forEach((f, i) =>
+    beep(f, 0.16, 0.18, 'triangle', i * 0.1)
+  );
+}
+
+// Pitido de notificación
+function playNotif() {
+  beep(880,  0.08, 0.15, 'sine', 0.0);
+  beep(1100, 0.15, 0.15, 'sine', 0.1);
+}
+
+/* ════════════════════════════════════
+   ESTADO
+════════════════════════════════════ */
+let step = 0;     // 0=Natalia 1=Incoming 2=Call 3=End
+let diagIdx = 0;
+let timerSec = 0;
+let timerIv  = null;
+let ringIv   = null;
+
+const DIAG = [
+  { who:'nat', txt:'Hola, Luis. ¿Cómo estás?' },
+  { who:'lui', txt:'Natis, aquí tratando de despejar unas dudas que tengo. Estoy a punto de abrir mi primer intento del cuestionario del Reto 2.' },
+  { who:'nat', txt:'¿Despejar dudas? Luis, ¡no olvides que MAÑANA empiezan los encuentros sincrónicos y allí podrás afianzar todo lo que has ido aprendiendo!' },
+  { who:'lui', txt:'¡Es verdad, es MAÑANA! Gracias, Natis, lo había olvidado. Sé que me va a ir muy bien porque ahí lograré participar activamente y quedaré listo para desarrollar mi cuestionario.' },
+  { who:'nat', txt:'¡Síiii! 🎉  ¡Nos vemos en la sesión!' },
+];
+
+/* ════════════════════════════════════
+   RELOJ
+════════════════════════════════════ */
+(function tick(){
+  const n = new Date();
+  document.getElementById('winclk').textContent =
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  setTimeout(tick, 1000);
+})();
+
+/* ════════════════════════════════════
+   TOAST
+════════════════════════════════════ */
+function showToast(msg) {
+  document.getElementById('tMsg').textContent = msg;
+  const el = document.getElementById('toast');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+/* ════════════════════════════════════
+   PANTALLAS
+════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.pointerEvents = 'none';
+  });
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  el.style.pointerEvents = 'all';
+}
+
+function setDot(i) {
+  ['d0','d1','d2','d3'].forEach((id, j) =>
+    document.getElementById(id).classList.toggle('on', j === i)
+  );
+}
+
+/* ════════════════════════════════════
+   FLUJO PRINCIPAL
+════════════════════════════════════ */
+function next() {
+  // Throttle
+  const btn = document.getElementById('advBtn');
+  btn.disabled = true;
+  setTimeout(() => btn.disabled = false, 700);
+
+  if (step === 0) {
+    // Primer clic: mostrar el pensamiento de Natalia y esperar
+    if (!document.getElementById('bNat').classList.contains('show')) {
+      document.getElementById('bNat').classList.add('show');
+      setTimeout(() => {
+        document.getElementById('actLine').classList.add('show');
+        // Cambiar texto del botón para indicar qué hará el siguiente clic
+        document.getElementById('advBtn').textContent = 'Llamar a Luis 📞';
+      }, 700);
+      return; // Esperar el siguiente clic
+    }
+    // Segundo clic: hacer la llamada
+    playRing();
+    step = 1; setDot(1);
+    setTimeout(() => {
+      showScreen('sIncoming');
+      showToast('📞 Llamada saliente a Luis…');
+      document.getElementById('advBtn').textContent = 'Continuar ▶';
+      ringIv = setInterval(playRing, 2300);
+    }, 600);
+
+  } else if (step === 1) {
+    answerCall();
+
+  } else if (step === 2) {
+    nextLine();
+  }
+}
+
+function answerCall() {
+  clearInterval(ringIv);
+  step = 2; setDot(2);
+  playConnect();
+  showToast('✅ Luis contestó la llamada');
+  showScreen('sCall');
+  startTimer();
+  setTimeout(nextLine, 900);
+}
+
+/* ════════════════════════════════════
+   DIÁLOGOS
+   — El mensaje PERMANECE en pantalla
+     hasta que el usuario pulse Continuar.
+   — NO hay setTimeout que lo borre.
+════════════════════════════════════ */
+function nextLine() {
+  if (diagIdx >= DIAG.length) {
+    // Finalizar
+    step = 3; setDot(3);
+    clearInterval(timerIv);
+    playNotif();
+    showToast('📵 Llamada finalizada');
+    setTimeout(() => showScreen('sEnd'), 700);
+    return;
+  }
+
+  const line = DIAG[diagIdx++];
+
+  // Resaltar hablante
+  document.getElementById('tNat').classList.toggle('speaking', line.who === 'nat');
+  document.getElementById('tLui').classList.toggle('speaking', line.who === 'lui');
+
+  // Mostrar / actualizar burbuja
+  const layer = document.getElementById('subsLayer');
+  const box   = document.getElementById('subBox');
+  const hint  = document.getElementById('hintLine');
+
+  layer.style.display = 'flex';
+
+  // Quitar animación para refrescar
+  box.classList.remove('vis');
+  box.className = 'subBox' + (line.who === 'lui' ? ' lui' : '');
+  box.innerHTML =
+    '<div class="swho">' +
+      (line.who === 'nat' ? '👩‍💻 Natalia' : '👨‍💻 Luis') +
+    '</div>' + line.txt;
+
+  // Forzar reflow antes de añadir .vis
+  void box.offsetWidth;
+  box.classList.add('vis');
+
+  // Actualizar hint
+  hint.classList.add('show');
+  hint.textContent = diagIdx >= DIAG.length
+    ? '▶ Presiona "Continuar" para finalizar'
+    : '▶ Presiona "Continuar" para avanzar';
+
+  playNotif();
+}
+
+/* ════════════════════════════════════
+   TIMER
+════════════════════════════════════ */
+function startTimer() {
+  timerSec = 0;
+  timerIv = setInterval(() => {
+    timerSec++;
+    const m = String(Math.floor(timerSec / 60)).padStart(2,'0');
+    const s = String(timerSec % 60).padStart(2,'0');
+    document.getElementById('cTimer').textContent = m + ':' + s;
+  }, 1000);
+}
+
+/* ════════════════════════════════════
+   REINICIAR
+════════════════════════════════════ */
+function restart() {
+  step = 0; diagIdx = 0; timerSec = 0;
+  clearInterval(timerIv); clearInterval(ringIv);
+  document.getElementById('bNat').classList.remove('show');
+  document.getElementById('actLine').classList.remove('show');
+  document.getElementById('subBox').classList.remove('vis');
+  document.getElementById('subsLayer').style.display = 'none';
+  document.getElementById('hintLine').classList.remove('show');
+  document.getElementById('tNat').classList.remove('speaking');
+  document.getElementById('tLui').classList.remove('speaking');
+  document.getElementById('cTimer').textContent = '00:00';
+  document.getElementById('advBtn').textContent = 'Continuar ▶';
+  setDot(0);
+  showScreen('sNatalia');
+}
+</script>
+</body>
+</html>
